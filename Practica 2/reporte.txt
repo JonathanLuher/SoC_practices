@@ -1,0 +1,248 @@
+\documentclass[12pt]{article}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+\usepackage{fancyhdr}
+\usepackage{tocloft}
+\pagestyle{fancy}
+\usepackage[utf8]{inputenc}
+\geometry{a4paper, margin=1in}
+\usepackage{natbib}
+\usepackage{url}
+\usepackage{pdflscape}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{float}
+
+% Definir estilos para el código
+\lstdefinestyle{ArduinoStyle}{
+    backgroundcolor=\color{white},   
+    commentstyle=\color{green},
+    keywordstyle=\color{blue},
+    numberstyle=\tiny\color{gray},
+    stringstyle=\color{orange},
+    basicstyle=\footnotesize\ttfamily,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+
+\lstset{style=ArduinoStyle}
+
+\begin{document}
+	\begin{titlepage}
+		\centering
+		{\includegraphics[width=0.25\textwidth]{ipn_logo.png}}
+		{\includegraphics[width=0.22\textwidth]{escom_logo.png}\par}
+		\vspace{1cm}
+		{\bfseries\LARGE Instituto Politécnico Nacional \par}
+		\vspace{1cm}
+		{\scshape\Large Escuela Superior de Cómputo\par}
+		\vspace{3cm}
+		{\scshape\Huge Practica 2.- LECTURA SERIAL DE UNA ENTRADA ANALÓGICA. \par}
+		\vspace{3cm}
+		{\itshape\Large Sistemas en chip \par}
+		{\itshape\Large Profesora: Ana Luz Barrales Lopez \par}
+		\vfill
+		{\Large Luciano Hernández Jonathan \par}
+		{\Large Rodriguez Morales Iñaki\par}
+		\vfill
+		{\Large 16 de octubre de 2024 \par}
+	\end{titlepage}
+
+\section{Introducción}
+
+El manejo de entradas analógicas es una capacidad fundamental en los sistemas embebidos, ya que la mayoría de los sensores en el mundo físico generan señales analógicas que deben ser interpretadas y procesadas digitalmente. En los SoC, como los microcontroladores, la conversión de estas señales es gestionada por un Convertidor Analógico-Digital (ADC), que transforma las variaciones continuas en una señal discreta comprensible para el procesador. Esta funcionalidad es crucial en aplicaciones que requieren la monitorización de parámetros físicos como temperatura, luz, presión o, en este caso, la posición de un potenciómetro, permitiendo una interacción eficiente entre el entorno físico y el sistema digital.
+
+Los SoC que incorporan la capacidad de manejar entradas analógicas son esenciales en el desarrollo de soluciones para dispositivos inteligentes, sistemas de control y automatización, proporcionando una base sólida para la integración de sensores en una amplia gama de proyectos de ingeniería.
+
+\subsection{Objetivos}
+
+\begin{itemize}
+    \item \textbf{Manejar una entrada analógica.}
+    Aprender a leer señales analógicas provenientes de un dispositivo como el potenciómetro, utilizando el convertidor analógico-digital (ADC) del Arduino.
+    \item \textbf{Mostrar los datos obtenidos en una salida digital (display)}
+    Esto implica mapear los valores analógicos y mostrarlos de manera clara en el display utilizando pines digitales del Arduino.
+    \item \textbf{Conocer los estados de un potenciómetro.}
+    Este objetivo busca entender cómo un potenciómetro varía su resistencia en función de su posición, generando diferentes valores analógicos.
+    \item \textbf{Conocer las funciones \texttt{AnalogRead()} y \texttt{SerialPrint()}.}
+    Se pretende comprender e implementar la función \texttt{AnalogRead()} para capturar valores analógicos y \texttt{SerialPrint()} para enviar datos al monitor serial.
+\end{itemize}
+
+\subsection{Materiales}
+Los materiales utilizados en la práctica son los siguientes:
+\begin{itemize}
+    \item Arduino Uno
+    \item Potenciómetro de 10k ohms
+    \item 2 displays de 7 segmentos
+    \item 14 resistencias de 330 ohms
+    \item Protoboard
+    \item Cables de conexión
+    \item Arduino IDE
+\end{itemize}
+
+\section{Desarrollo de la Práctica}
+
+\subsection{Explicación de las conexiones}
+La conexión del circuito consiste en conectar el potenciómetro al Arduino de la siguiente manera: el pin central del potenciómetro va al pin A0 del Arduino (entrada analógica), mientras que los otros dos pines del potenciómetro van a VCC (5V) y GND, respectivamente. Los dos displays de 7 segmentos se conectan a pines digitales del Arduino (D2-D13), utilizando resistencias limitadoras para proteger los LEDs de los displays. Estos pines digitales enviarán la señal digital a los displays de 7 segmentos.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{circuito1.png}
+    \caption{Diagrama del circuito: entrada analógica a salida digital.}
+\end{figure}
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.8\textwidth]{circuito2.png}
+    \caption{Diagrama del circuito: entrada analógica a salida digital.}
+\end{figure}
+
+\subsection{Desarrollo del código}
+\subsubsection{Configuración de Pines}
+
+El siguiente bloque de código define los pines digitales utilizados para controlar los displays de 7 segmentos. Los pines están asignados a las posiciones de los segmentos para formar los números:
+
+\begin{lstlisting}[language=C]
+const int segA = 2;
+const int segB = 3;
+const int segC = 4;
+const int segD = 5;
+const int segE = 6;
+const int segF = 7;
+const int segG = 8;
+const int digit1 = 9;
+const int digit2 = 10;
+\end{lstlisting}
+
+\subsubsection{Inicialización del Programa}
+
+En la función \texttt{setup()}, se inicializan los pines como salidas digitales y se comienza la comunicación serial para depuración y monitoreo de los valores leídos:
+
+\begin{lstlisting}[language=C]
+void setup() {
+    pinMode(segA, OUTPUT);
+    pinMode(segB, OUTPUT);
+    pinMode(segC, OUTPUT);
+    pinMode(segD, OUTPUT);
+    pinMode(segE, OUTPUT);
+    pinMode(segF, OUTPUT);
+    pinMode(segG, OUTPUT);
+    pinMode(digit1, OUTPUT);
+    pinMode(digit2, OUTPUT);
+    
+    Serial.begin(9600);
+}
+\end{lstlisting}
+
+\subsubsection{Lectura del Potenciómetro}
+
+La función \texttt{loop()} se encarga de leer el valor analógico del potenciómetro mediante la función \texttt{AnalogRead()}. Este valor se convierte y mapea para mostrar un rango de 0 a 10:
+
+\begin{lstlisting}[language=C]
+void loop() {
+    int analogValue = analogRead(A0);
+    
+    int displayValue = map(analogValue, 0, 1023, 0, 10);
+    
+    Serial.print("Valor medido: ");
+    Serial.println(displayValue);
+    mostrarNumero(displayValue);
+    
+    delay(500);
+}
+\end{lstlisting}
+
+\subsubsection{Función para Mostrar Números en los Displays}
+
+La función \texttt{mostrarNumero()} maneja el control de los segmentos de los displays de 7 segmentos, activando los segmentos necesarios para formar el número correspondiente. Utiliza multiplexado para controlar ambos displays:
+
+\begin{lstlisting}[language=C]
+// Función para mostrar números en los displays
+void mostrarNumero(int num) {
+    int unidades = num % 10;  // Unidad del número
+    int decenas = num / 10;   // Decenas del número
+    
+    // Mostrar decenas en el primer display
+    digitalWrite(digit1, HIGH);
+    mostrarDigito(decenas);
+    delay(5); // Multiplexado
+    digitalWrite(digit1, LOW);
+    
+    // Mostrar unidades en el segundo display
+    digitalWrite(digit2, HIGH);
+    mostrarDigito(unidades);
+    delay(5); // Multiplexado
+    digitalWrite(digit2, LOW);
+}
+\end{lstlisting}
+
+\subsubsection{Función para Controlar Segmentos}
+
+La función \texttt{mostrarDigito()} activa los segmentos correctos en función del dígito a mostrar. Cada número del 0 al 9 tiene una combinación específica de segmentos encendidos:
+
+\begin{lstlisting}[language=C]
+// Función para mostrar dígitos del 0 al 9 en el display
+void mostrarDigito(int num) {
+    switch(num) {
+        case 0:
+            digitalWrite(segA, HIGH);
+            digitalWrite(segB, HIGH);
+            digitalWrite(segC, HIGH);
+            digitalWrite(segD, HIGH);
+            digitalWrite(segE, HIGH);
+            digitalWrite(segF, HIGH);
+            digitalWrite(segG, LOW);
+            break;
+        case 1:
+            digitalWrite(segA, LOW);
+            digitalWrite(segB, HIGH);
+            digitalWrite(segC, HIGH);
+            digitalWrite(segD, LOW);
+            digitalWrite(segE, LOW);
+            digitalWrite(segF, LOW);
+            digitalWrite(segG, LOW);
+            break;
+        // Continuar con los otros casos (2 a 9)
+        // ...
+    }
+}
+\end{lstlisting}
+
+
+\subsection{Simulación}
+La simulación del circuito fue realizada en la plataforma \textbf{Tinkercad}, un entorno de simulación en línea que permite construir y ejecutar circuitos electrónicos de manera virtual. En el que previo a implementarse con componentes reales, se llevo a cabo en esta plataforma.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{ss_pot.png}
+    \caption{Funcionamiento del cricuito}
+\end{figure}
+
+Primera imagen donde se puede observar el funcionamiento del circuito de manera correcta en la simulación.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.4\textwidth]{ss_potmax.png}
+    \caption{Funcionamiento del cricuito}
+\end{figure}
+
+Primera imagen donde se puede observar el funcionamiento del circuito de manera correcta en la simulación con el potenciometro al maximo.
+
+\section{Conclusiones}
+
+En esta práctica se logró comprender y aplicar la lectura de una entrada analógica mediante un potenciómetro y mostrar el resultado en un display de 7 segmentos. Se aprendió a manejar el ADC del Arduino y a realizar la conversión y representación de datos analógicos a digitales. La experiencia adquirida es fundamental para futuros proyectos que involucren el uso de sensores y sistemas de visualización de datos en dispositivos embebidos.
+
+\end{document}
