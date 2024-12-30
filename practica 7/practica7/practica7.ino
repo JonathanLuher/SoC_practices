@@ -2,11 +2,8 @@
 #include <MFRC522.h>
 #include <LiquidCrystal.h>
 
-// Pines del lector RFID
 #define SS_PIN 10
 #define RST_PIN 7
-
-// Pines del LCD
 LiquidCrystal lcd(8, 9, 5, 4, 3, 2);
 
 // Instancia del lector RFID
@@ -16,7 +13,6 @@ MFRC522 rfid(SS_PIN, RST_PIN);
 byte uidAutorizado[] = {0xE3, 0xF3, 0x19, 0x14};
 
 void setup() {
-  // Inicialización del LCD
   lcd.begin(16, 2); // Configuración del LCD de 16x2
   lcd.print("CERRADO"); // Mensaje inicial
 
@@ -56,7 +52,6 @@ void loop() {
     Serial.println("Acceso denegado.");
   }
 
-  // Espera unos segundos antes de volver al estado inicial
   delay(3000);
   lcd.clear();
   lcd.setCursor(0, 0);
@@ -74,5 +69,5 @@ bool verificarUID() {
     if (rfid.uid.uidByte[i] != uidAutorizado[i]) return false;
   }
 
-  return true; // Todos los bytes coinciden
+  return true;
 }
