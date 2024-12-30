@@ -1,6 +1,5 @@
 #include <SPI.h>
 
-// Pines de selección de esclavo para los dos sensores
 const int CSB_PIN1 = 10; 
 const int CSB_PIN2 = 9;
 
@@ -65,7 +64,7 @@ void initBMP280(int csbPin) {
   dig_T2_1 = readRegister16Signed(csbPin, 0x8A);
   dig_T3_1 = readRegister16Signed(csbPin, 0x8C);
 
-  dig_T1_2 = dig_T1_1; // Usar mismas calibraciones para ambos sensores (ajustar si necesario)
+  dig_T1_2 = dig_T1_1;
   dig_T2_2 = dig_T2_1;
   dig_T3_2 = dig_T3_1;
 
@@ -100,12 +99,12 @@ float readPressure(int csbPin, int sensor) {
                      ((readRegister(csbPin, 0xF9) >> 4));
   digitalWrite(csbPin, HIGH);
 
-  return rawPress / 256.0; // Ajustar según la conversión del sensor específico
+  return rawPress / 256.0;
 }
 
 void writeRegister(int csbPin, byte reg, byte value) {
   digitalWrite(csbPin, LOW);
-  SPI.transfer(reg & 0x7F); // Escribir en el registro
+  SPI.transfer(reg & 0x7F);
   SPI.transfer(value);
   digitalWrite(csbPin, HIGH);
 }
@@ -120,7 +119,7 @@ int16_t readRegister16Signed(int csbPin, byte reg) {
 
 byte readRegister(int csbPin, byte reg) {
   digitalWrite(csbPin, LOW);
-  SPI.transfer(reg | 0x80); // Leer del registro
+  SPI.transfer(reg | 0x80);
   byte result = SPI.transfer(0x00);
   digitalWrite(csbPin, HIGH);
   return result;
